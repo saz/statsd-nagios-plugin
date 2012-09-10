@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-from pynagios import Plugin, Response, make_option, CRITICAL
+from pynagios import Plugin, Response, make_option, CRITICAL, UNKNOWN
 import socket
 
 
 class StatsdCheck(Plugin):
-    port = make_option('-p', '--port', type='int')
-    metric = make_option('-m', '--metric', type='str')
+    port = make_option('-p', '--port', type='int', default=8126)
+    metric = make_option('-m', '--metric', type='str', default='uptime')
     _socket = None
 
     def _connect(self, host, port, timeout):
@@ -29,7 +29,10 @@ class StatsdCheck(Plugin):
 
     def check(self):
         timeout = self.options.timeout if self.options.timeout > 0 else 10
-        metric = self.options.metric.strip().lower() if self.options.metric else 'uptime'
+        metric = self.options.metric.strip().lower()
+
+        if not self.options.hostname:
+            return Response(UNKNOWN, 'Hostname is missing')
 
         try:
             self._connect(self.options.hostname, self.options.port, timeout)
@@ -40,7 +43,9 @@ class StatsdCheck(Plugin):
                 if data and 'END' in data:
                     break
             self._socket.close()
-        except (socket.error, socket.timeout), (msg):
+        except socket.error, (errno, msg):
+            return Response(CRITICAL, msg)
+        except socket.timeout, msg:
             return Response(CRITICAL, msg)
 
         data = data.strip().split('\n')
