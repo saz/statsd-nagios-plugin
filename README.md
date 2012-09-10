@@ -5,12 +5,14 @@
 
 #### Installation
 1. Install pynagios
-
+```
     pip install pynagios
+```
 
 2. Clone statsd-nagios-plugin
-
+```
     git clone git://github.com/saz/statsd-nagios-plugin.git
+```
 
 #### Usage
 
